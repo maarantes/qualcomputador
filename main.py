@@ -65,6 +65,7 @@ def handle_message(update: Update, context):
                 chat_id=update.effective_chat.id,
                 text=response_notebook()
             )
+            context.user_data['step'] = 3
         elif user_message == '2':
             # Salvar escolha "computador"
             context.user_data['device_choice'] = "computador"
@@ -72,11 +73,79 @@ def handle_message(update: Update, context):
                 chat_id=update.effective_chat.id,
                 text=response_computer()
             )
+            context.user_data['step'] = 3
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=response_invalid()
             )
+    
+    # Pergunta 03: Qual será o principal uso do dispositivo?
+    elif step == 3:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Qual será o principal uso do dispositivo?\n"
+                 "a) Trabalho (Escritório, Home Office)\n"
+                 "b) Estudos\n"
+                 "c) Edição de vídeo/imagem\n"
+                 "d) Jogos\n"
+                 "e) Programação"
+        )
+        context.user_data['step'] = 4
+
+    # Pergunta 04: Quanto armazenamento você precisa?
+    elif step == 4:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Quanto armazenamento você precisa?\n"
+                 "a) Menos de 256GB (usuários leves)\n"
+                 "b) 256GB - 512GB (usuários moderados)\n"
+                 "c) 1TB ou mais (usuários que armazenam grandes arquivos)"
+        )
+        context.user_data['step'] = 5
+
+    # Pergunta 05: Importância da duração da bateria
+    elif step == 5:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Qual a importância da duração da bateria para você? (se aplicável a notebooks)\n"
+                 "a) Muito importante (uso frequente fora de casa/escritório)\n"
+                 "b) Moderadamente importante\n"
+                 "c) Pouco importante (uso principalmente conectado à tomada)"
+        )
+        context.user_data['step'] = 6
+
+    # Pergunta 06: Qualidade de resolução da tela
+    elif step == 6:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Você precisa de uma tela com alta qualidade de resolução (Full HD, 4K)?\n"
+                 "a) Sim, para edição de fotos/vídeos ou jogos\n"
+                 "b) Sim, mas apenas para assistir a vídeos e trabalhar\n"
+                 "c) Não, uma resolução padrão é suficiente"
+        )
+        context.user_data['step'] = 7
+
+    # Pergunta 07: Tamanho da tela preferido
+    elif step == 7:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Qual o tamanho da tela que você prefere?\n"
+                 "a) Menos de 14” (portabilidade)\n"
+                 "b) 14” - 15.6” (equilíbrio)\n"
+                 "c) 17” ou mais (para maior visibilidade)"
+        )
+        context.user_data['step'] = 8
+
+    # Pergunta 08: Necessidade de placa de vídeo dedicada
+    elif step == 8:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Você vai precisar de placa de vídeo dedicada?\n"
+                 "a) Sim, para jogos ou edição de vídeo\n"
+                 "b) Não, uma placa gráfica integrada é suficiente"
+        )
+        context.user_data['step'] = 9
 
 def main():
     try:
