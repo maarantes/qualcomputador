@@ -1,13 +1,38 @@
 import logging
+import requests
+import openai
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-from questions import question_ready, question_device_choice, response_notebook, response_computer, response_invalid
+from questions import (question_ready, question_device_choice, question_usage,
+                       question_storage, question_resolution, 
+                       question_screen_size, question_graphics, response_invalid)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+openai.api_key = "CHAVE-API-AQUI"
+
+# Função para fazer perguntas ao ChatGPT usando a nova interface da API da OpenAI (>=1.0.0)
+def ask_chatgpt(question):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Usando o modelo de chat
+            messages=[
+                {"role": "system", "content": "Você é um assistente útil."},
+                {"role": "user", "content": question}
+            ],
+            max_tokens=150,
+            temperature=0.7,
+        )
+        answer = response['choices'][0]['message']['content'].strip()
+        return answer
+    except Exception as e:
+        logger.error(f"Erro ao fazer pergunta ao ChatGPT: {e}")
+        return "Não foi possível processar sua solicitação no momento."
+
 
 def start(update: Update, context):
     logger.info(f"Comando /start recebido de {update.effective_user.first_name}")
@@ -28,124 +53,122 @@ def start(update: Update, context):
     )
     
     context.user_data['step'] = 1
+    context.user_data['answers'] = ""
 
 # Função para lidar com mensagens de texto
 def handle_message(update: Update, context):
-    user_message = update.message.text.strip()
+    user_message = update.message.text.strip().lower()
     logger.info(f"Mensagem recebida: {user_message} de {update.effective_user.first_name}")
     
     step = context.user_data.get('step', 1)
 
-    # Pergunta 01: Pronto para começar?
+    # Etapa 1: Pergunta "Pronto para começar?"
     if step == 1:
         if user_message == '1':
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=question_device_choice()
-            )
+            context.bot.send_message(chat_id=update.effective_chat.id, text=question_device_choice())
             context.user_data['step'] = 2
         elif user_message == '2':
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Tudo bem! Quando estiver pronto, me avise."
-            )
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Tudo bem! Quando estiver pronto, me avise.")
         else:
-            # Resposta inválida
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Desculpe, não entendi sua resposta. Responda com 1 (Sim) ou 2 (Não)."
-            )
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Responda com 1 (Sim) ou 2 (Não).")
     
-    # Pergunta 02: Notebook ou Computador?
+    # Etapa 2: Escolha entre Notebook ou Computador
     elif step == 2:
         if user_message == '1':
-            # Salvar escolha"notebook"
-            context.user_data['device_choice'] = "notebook"
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=response_notebook()
-            )
+            context.user_data['answers'] += "Notebook\n"
+            context.bot.send_message(chat_id=update.effective_chat.id, text=question_usage())
             context.user_data['step'] = 3
         elif user_message == '2':
-            # Salvar escolha "computador"
-            context.user_data['device_choice'] = "computador"
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=response_computer()
-            )
+            context.user_data['answers'] += "Computador\n"
+            context.bot.send_message(chat_id=update.effective_chat.id, text=question_usage())
             context.user_data['step'] = 3
         else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=response_invalid()
-            )
-    
-    # Pergunta 03: Qual será o principal uso do dispositivo?
+            context.bot.send_message(chat_id=update.effective_chat.id, text=response_invalid())
+
+    # Etapa 3: Uso principal
     elif step == 3:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Qual será o principal uso do dispositivo?\n"
-                 "a) Trabalho (Escritório, Home Office)\n"
-                 "b) Estudos\n"
-                 "c) Edição de vídeo/imagem\n"
-                 "d) Jogos\n"
-                 "e) Programação"
-        )
+        if user_message == 'a':
+            context.user_data['answers'] += "Para Trabalhar i3 8GB RAM\n"
+        elif user_message == 'b':
+            context.user_data['answers'] += "Para Estudar i3 4GB RAM\n"
+        elif user_message == 'c':
+            context.user_data['answers'] += "Para Edição de Video e Imagem i7 16GB RAM\n"
+        elif user_message == 'd':
+            context.user_data['answers'] += "Para Jogos i7 16GB RAM\n"
+        elif user_message == 'e':
+            context.user_data['answers'] += "Para Programação i5 8GB RAM\n"
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=response_invalid())
+            return
+
+        context.bot.send_message(chat_id=update.effective_chat.id, text=question_storage())
         context.user_data['step'] = 4
 
-    # Pergunta 04: Quanto armazenamento você precisa?
+    # Etapa 4: Armazenamento
     elif step == 4:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Quanto armazenamento você precisa?\n"
-                 "a) Menos de 256GB (usuários leves)\n"
-                 "b) 256GB - 512GB (usuários moderados)\n"
-                 "c) 1TB ou mais (usuários que armazenam grandes arquivos)"
-        )
+        if user_message == 'a':
+            context.user_data['answers'] += "Armazenamento 256GB\n"
+        elif user_message == 'b':
+            context.user_data['answers'] += "Armazenamento 512GB\n"
+        elif user_message == 'c':
+            context.user_data['answers'] += "Armazenamento 1TB\n"
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=response_invalid())
+            return
+
+        context.bot.send_message(chat_id=update.effective_chat.id, text=question_resolution())
         context.user_data['step'] = 5
 
-    # Pergunta 05: Importância da duração da bateria
+    # Etapa 5: Qualidade de resolução da tela
     elif step == 5:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Qual a importância da duração da bateria para você? (se aplicável a notebooks)\n"
-                 "a) Muito importante (uso frequente fora de casa/escritório)\n"
-                 "b) Moderadamente importante\n"
-                 "c) Pouco importante (uso principalmente conectado à tomada)"
-        )
+        if user_message == 'a':
+            context.user_data['answers'] += "Resolução Full HD 4K\n"
+        elif user_message == 'b':
+            context.user_data['answers'] += "Resolução moderada\n"
+        elif user_message == 'c':
+            context.user_data['answers'] += "Resolução padrão\n"
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=response_invalid())
+            return
+
+        context.bot.send_message(chat_id=update.effective_chat.id, text=question_screen_size())
         context.user_data['step'] = 6
 
-    # Pergunta 06: Qualidade de resolução da tela
+    # Etapa 6: Tamanho da tela preferido
     elif step == 6:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Você precisa de uma tela com alta qualidade de resolução (Full HD, 4K)?\n"
-                 "a) Sim, para edição de fotos/vídeos ou jogos\n"
-                 "b) Sim, mas apenas para assistir a vídeos e trabalhar\n"
-                 "c) Não, uma resolução padrão é suficiente"
-        )
+        if user_message == 'a':
+            context.user_data['answers'] += "Tela Menos de 14 polegadas\n"
+        elif user_message == 'b':
+            context.user_data['answers'] += "Tela 14 a 15.6 polegadas\n"
+        elif user_message == 'c':
+            context.user_data['answers'] += "Tela maior que 17 polegadas\n"
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=response_invalid())
+            return
+
+        context.bot.send_message(chat_id=update.effective_chat.id, text=question_graphics())
         context.user_data['step'] = 7
 
-    # Pergunta 07: Tamanho da tela preferido
+    # Etapa 7: Necessidade de placa de vídeo dedicada
     elif step == 7:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Qual o tamanho da tela que você prefere?\n"
-                 "a) Menos de 14” (portabilidade)\n"
-                 "b) 14” - 15.6” (equilíbrio)\n"
-                 "c) 17” ou mais (para maior visibilidade)"
-        )
-        context.user_data['step'] = 8
+        if user_message == 'a':
+            context.user_data['answers'] += "Placa de vídeo Dedicada\n"
+        elif user_message == 'b':
+            context.user_data['answers'] += "Placa de vídeo Integrada\n"
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=response_invalid())
+            return
 
-    # Pergunta 08: Necessidade de placa de vídeo dedicada
-    elif step == 8:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Você vai precisar de placa de vídeo dedicada?\n"
-                 "a) Sim, para jogos ou edição de vídeo\n"
-                 "b) Não, uma placa gráfica integrada é suficiente"
-        )
-        context.user_data['step'] = 9
+        # Exibir as respostas armazenadas
+        final_message = "Suas respostas:\n" + context.user_data['answers']
+        context.bot.send_message(chat_id=update.effective_chat.id, text=final_message)
+
+        # Perguntar ao ChatGPT por 5 notebooks com base nas especificações
+        query = f"Procure 5 nomes de dispositivos que se adequem às especificações que eu preciso e não me responda nada além do nome dos dispositivos. Pesquise apenas nas seguintes lojas virtuais brasileiras: Carrefour, Extra, Shoptime, Pontofrio, Casas Bahia, Submarino, Americanas, Magazine Luiza, Amazon e Mercado Livre. Especificações: {context.user_data['answers']}"
+        gpt_response = ask_chatgpt(query)
+
+        # Enviar a resposta do ChatGPT
+        context.bot.send_message(chat_id=update.effective_chat.id, text=gpt_response)
 
 def main():
     try:

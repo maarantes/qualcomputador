@@ -7,20 +7,9 @@ def question_device_choice():
     return ("Você prefere ou possui a necessidade de ter um dispositivo que possa ser levado para qualquer lugar ou um dispositivo fixo, porém mais eficiente?\n"
             "Opções:\n1 (Notebook)\n2 (Computador)")
 
-# Pergunta 02 > Notebook:
-def response_notebook():
-    return ("Você escolheu um notebook! Ótimo para quem precisa de mobilidade.\n"
-            "Agora, me diga: Qual será o principal uso do dispositivo?\n"
-            "a) Trabalho (Escritório, Home Office)\n"
-            "b) Estudos\n"
-            "c) Edição de vídeo/imagem\n"
-            "d) Jogos\n"
-            "e) Programação")
-
-# Pergunta 02 > Computador
-def response_computer():
-    return ("Você escolheu um computador! Perfeito para quem precisa de mais desempenho.\n"
-            "Agora, me diga: Qual será o principal uso do dispositivo?\n"
+# Pergunta 03: Qual será o principal uso do dispositivo?
+def question_usage():
+    return ("Qual será o principal uso do dispositivo?\n"
             "a) Trabalho (Escritório, Home Office)\n"
             "b) Estudos\n"
             "c) Edição de vídeo/imagem\n"
@@ -33,13 +22,6 @@ def question_storage():
             "a) Menos de 256GB (usuários leves)\n"
             "b) 256GB - 512GB (usuários moderados)\n"
             "c) 1TB ou mais (usuários que armazenam grandes arquivos)")
-
-# Pergunta sobre duração da bateria (para notebooks)
-def question_battery():
-    return ("Qual a importância da duração da bateria para você? (se aplicável a notebooks)\n"
-            "a) Muito importante (uso frequente fora de casa/escritório)\n"
-            "b) Moderadamente importante\n"
-            "c) Pouco importante (uso principalmente conectado à tomada)")
 
 # Pergunta sobre qualidade de resolução da tela
 def question_resolution():
